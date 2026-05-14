@@ -62,11 +62,12 @@ int main(void)
             static uint32_t lastStatusTick = 0;
             extern volatile uint32_t TimeCnt_ms;
 
-            /* Periodic status report every 10s */
-            if ((TimeCnt_ms - lastStatusTick) >= 10000) {
+            /* Periodic status report every 5s */
+            if ((TimeCnt_ms - lastStatusTick) >= 5000) {
                 lastStatusTick = TimeCnt_ms;
                 printf("[STATUS] WiFi=%d Client=%d\r\n",
                     ESP01S_WiFiConnected, ESP01S_IsClientConnected());
+                ESP01S_DumpRingBuf();
             }
 
             if ((TimeCnt_ms - lastTick) >= 5000) {

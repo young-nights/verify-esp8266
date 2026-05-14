@@ -403,6 +403,39 @@ uint8_t ESP01S_IsClientConnected(void)
     return s_clientConnected;
 }
 
+/** Debug: dump ring buffer contents as hex */
+void ESP01S_DumpRingBuf(void)
+{
+    uint16_t count, i;
+
+    if (s_ringHead >= s_ringTail)
+        count = s_ringHead - s_ringTail;
+    else
+        count = ESP01S_RINGBUF_SIZE - s_ringTail + s_ringHead;
+
+    if (count == 0) {
+        printf("[DUMP] RingBuf empty\r\n");
+        return;
+    }
+
+    printf("[DUMP] RingBuf %d bytes: ", count);
+    for (i = 0; i < count && i < 64; i++) {
+        uint8_t b = s_ringBuf[(s_ringTail + i) % ESP01S_RINGBUF_SIZE];
+        printf("%02X ", b);
+    }
+    if (count > 64) printf("...");
+    printf("\r\n");
+
+    /* Also print as ASCII for readable chars */
+    printf("[DUMP] ASCII: ");
+    for (i = 0; i < count && i < 64; i++) {
+        uint8_t b = s_ringBuf[(s_ringTail + i) % ESP01S_RINGBUF_SIZE];
+        printf("%c", (b >= 0x20 && b < 0x7F) ? b : '.');
+    }
+    if (count > 64) printf("...");
+    printf("\r\n");
+}
+
 /* ======================== Frame RX Parsing ======================== */
 
 /**
