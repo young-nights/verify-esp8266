@@ -59,6 +59,9 @@
 #define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)  
 
 
+/* Debug USART1 for printf redirect */
+void Debug_USART_Init(void);
+
 void WFI_SET(void);		
 void INTX_DISABLE(void);
 void INTX_ENABLE(void);	

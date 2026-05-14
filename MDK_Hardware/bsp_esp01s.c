@@ -13,7 +13,7 @@
 
 /* ======================== Configuration ======================== */
 #define ESP01S_USART            USART2
-#define ESP01S_BAUDRATE         115200
+#define ESP01S_BAUDRATE         9600
 #define ESP01S_RINGBUF_SIZE     512
 #define ESP01S_MAX_LINKS        5       /* CIPMUX=1 supports up to 5 links */
 #define ESP01S_TX_BUF_SIZE      128     /* AT+CIPSEND staging buffer */
@@ -275,40 +275,53 @@ static uint8_t AT_WaitOK(const char* cmd, uint16_t timeout)
 
 static void ESP01S_ConfigSequence(void)
 {
-    /* Step 1: Hardware reset - pull RST LOW then HIGH */
-    GPIO_ResetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);  /* Assert reset */
+    uint8_t ok;
+
+    printf("[CFG] Step1: Hardware reset...\r\n");
+    GPIO_ResetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);
     delay_ms(100);
-    GPIO_SetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);    /* Release reset */
-    delay_ms(1000);  /* Wait for boot */
-
-    /* Step 2: Check module alive */
-    if (!AT_WaitOK("AT", 2000)) {
-        delay_ms(1000);
-        AT_WaitOK("AT", 2000);
-    }
-
-    /* Step 3: Set AP mode */
-    AT_WaitOK("AT+CWMODE=2", 2000);
-
-    /* Step 4: Create AP: SSID=ESP8266, password=12345678, ch=1, enc=WPA2 */
-    AT_WaitOK("AT+CWSAP=\"ESP8266\",\"12345678\",1,3", 3000);
+    GPIO_SetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);
     delay_ms(1000);
+    printf("[CFG] Step1: Done.\r\n");
 
-    /* Step 5: Enable multiple connections */
-    AT_WaitOK("AT+CIPMUX=1", 2000);
-
-    /* Step 6: Start TCP server on port 8080 */
-    if (!AT_WaitOK("AT+CIPSERVER=1,8080", 2000)) {
-        /* Retry once: server might need more time after AP creation */
+    printf("[CFG] Step2: AT check...\r\n");
+    ok = AT_WaitOK("AT", 2000);
+    if (!ok) {
+        printf("[CFG] Step2: Retry...\r\n");
         delay_ms(1000);
-        AT_WaitOK("AT+CIPSERVER=1,8080", 2000);
+        ok = AT_WaitOK("AT", 2000);
     }
+    printf("[CFG] Step2: %s\r\n", ok ? "OK" : "FAIL");
 
-    /* Step 7: Server timeout 120 seconds */
-    AT_WaitOK("AT+CIPSTO=120", 2000);
+    printf("[CFG] Step3: Set AP mode...\r\n");
+    ok = AT_WaitOK("AT+CWMODE=2", 2000);
+    printf("[CFG] Step3: %s\r\n", ok ? "OK" : "FAIL");
 
-    /* Step 8: Verify AP IP address */
+    printf("[CFG] Step4: Create AP...\r\n");
+    ok = AT_WaitOK("AT+CWSAP=\"ESP8266\",\"12345678\",1,3", 3000);
+    delay_ms(1000);
+    printf("[CFG] Step4: %s\r\n", ok ? "OK" : "FAIL");
+
+    printf("[CFG] Step5: Enable MUX...\r\n");
+    ok = AT_WaitOK("AT+CIPMUX=1", 2000);
+    printf("[CFG] Step5: %s\r\n", ok ? "OK" : "FAIL");
+
+    printf("[CFG] Step6: Start TCP server...\r\n");
+    ok = AT_WaitOK("AT+CIPSERVER=1,8080", 2000);
+    if (!ok) {
+        printf("[CFG] Step6: Retry...\r\n");
+        delay_ms(1000);
+        ok = AT_WaitOK("AT+CIPSERVER=1,8080", 2000);
+    }
+    printf("[CFG] Step6: %s\r\n", ok ? "OK" : "FAIL");
+
+    printf("[CFG] Step7: Set timeout...\r\n");
+    ok = AT_WaitOK("AT+CIPSTO=120", 2000);
+    printf("[CFG] Step7: %s\r\n", ok ? "OK" : "FAIL");
+
+    printf("[CFG] Step8: Check IP...\r\n");
     ESP01S_SendCmd("AT+CIFSR", "192.168.4.1", 2000);
+    printf("[CFG] Init complete.\r\n");
 }
 
 /* ======================== Frame TX ======================== */
@@ -382,6 +395,12 @@ void ESP01S_SendTestData(void)
     uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
     if (!s_clientConnected) return;
     ESP01S_SendFrame(s_clientLinkId, CMD_TEST_DATA, payload, 4);
+    printf("[TX] Test frame sent (4 bytes)\r\n");
+}
+
+uint8_t ESP01S_IsClientConnected(void)
+{
+    return s_clientConnected;
 }
 
 /* ======================== Frame RX Parsing ======================== */
@@ -402,6 +421,7 @@ static void ESP01S_HandleFrame(const uint8_t* frame)
         ESP01S_SendFrame(s_clientLinkId, CMD_ECHO_REQUEST, payload, len);
         break;
     default:
+        printf("[RX] Unknown CMD=0x%02X LEN=%d\r\n", cmd, len);
         break;
     }
 }
@@ -567,6 +587,7 @@ void ESP01S_Process(void)
                     s_clientLinkId = scanBuf[i - 1] - '0';
                     s_clientConnected = 1;
                     s_connectCount++;
+                    printf("[NET] Client CONNECTED link_id=%d\r\n", s_clientLinkId);
                 }
                 RingBuf_SkipUntil(",CONNECT");
                 if (s_ringHead >= s_ringTail)
@@ -586,6 +607,7 @@ void ESP01S_Process(void)
             if (memcmp(&scanBuf[i], ",CLOSED", 7) == 0) {
                 s_clientConnected = 0;
                 s_disconnectCount++;
+                printf("[NET] Client DISCONNECTED\r\n");
                 RingBuf_SkipUntil(",CLOSED");
                 if (s_ringHead >= s_ringTail)
                     count = s_ringHead - s_ringTail;
@@ -691,6 +713,8 @@ void ESP01S_Process(void)
 
                     /* Advance tail past the entire +IPD block */
                     s_ringTail = (dataStartRingIdx + extractLen) % ESP01S_RINGBUF_SIZE;
+
+                    printf("[RX] +IPD len=%d\r\n", extractLen);
 
                     /* Parse frames from extracted data */
                     ESP01S_ParseFrames(extractBuf, extractLen);
