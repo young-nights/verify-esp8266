@@ -777,7 +777,7 @@ I (..\MDK_STM32F10x_FWLib\inc\stm32f10x_tim.h)(0x6533778E)
 I (..\MDK_STM32F10x_FWLib\inc\stm32f10x_usart.h)(0x6533778E)
 I (..\MDK_STM32F10x_FWLib\inc\stm32f10x_wwdg.h)(0x6533778E)
 I (..\MDK_STM32F10x_FWLib\inc\misc.h)(0x65337786)
-F (..\MDK_Hardware\bsp_esp01s.c)(0x6A05C37A)(--c99 -c --cpu Cortex-M3 -g -O1 --apcs=interwork --split_sections -I ..\MDK_APP -I ..\MDK_Core -I ..\MDK_Hardware -I ..\MDK_Hardware\OLED -I ..\MDK_STM32F10x_FWLib\inc -I ..\MDK_System -I ..\MDK_User --diag_suppress=1-ID:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o .\objects\bsp_esp01s.o --omf_browse .\objects\bsp_esp01s.crf --depend .\objects\bsp_esp01s.d)
+F (..\MDK_Hardware\bsp_esp01s.c)(0x6A05C6FF)(--c99 -c --cpu Cortex-M3 -g -O1 --apcs=interwork --split_sections -I ..\MDK_APP -I ..\MDK_Core -I ..\MDK_Hardware -I ..\MDK_Hardware\OLED -I ..\MDK_STM32F10x_FWLib\inc -I ..\MDK_System -I ..\MDK_User --diag_suppress=1-ID:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -DSTM32F10X_HD -DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o .\objects\bsp_esp01s.o --omf_browse .\objects\bsp_esp01s.crf --depend .\objects\bsp_esp01s.d)
 I (..\MDK_Hardware\bsp_esp01s.h)(0x6A05C313)
 I (..\MDK_User\stm32f10x.h)(0x69F8A09A)
 I (..\MDK_Core\core_cm3.h)(0x65337774)

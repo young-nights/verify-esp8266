@@ -887,6 +887,18 @@ void ESP01S_Process(void)
             }
         }
 
+        if (!foundIPD && scanCount > 0) {
+            /* Debug: show what data we have but couldn't find +IPD */
+            static uint32_t lastNoIpdDbg = 0;
+            extern volatile uint32_t TimeCnt_ms;
+            if ((TimeCnt_ms - lastNoIpdDbg) >= 3000 && scanCount > 4) {
+                lastNoIpdDbg = TimeCnt_ms;
+                printf("[IPD] No +IPD found in %d bytes: ", scanCount);
+                { uint16_t _di; for (_di = 0; _di < scanCount && _di < 20; _di++) printf("%02X ", scanBuf[_di]); }
+                printf("\r\n");
+            }
+        }
+
         if (foundIPD) {
             /* Parse: +IPD,<link_id>,<length>:<data> */
             uint16_t pos = ipdPos + 4;  /* After "+IPD" */
@@ -963,10 +975,13 @@ void ESP01S_Process(void)
                     /* Advance tail past the entire +IPD block */
                     s_ringTail = (dataStartRingIdx + extractLen) % ESP01S_RINGBUF_SIZE;
 
-                    printf("[RX] +IPD len=%d\r\n", extractLen);
+                    printf("[RX] +IPD len=%d, data: ", extractLen);
+                    { uint16_t _di; for (_di = 0; _di < extractLen && _di < 16; _di++) printf("%02X ", extractBuf[_di]); }
+                    printf("\r\n");
 
                     /* Parse frames from extracted data */
                     ESP01S_ParseFrames(extractBuf, extractLen);
+                    printf("[RX] Parse done.\r\n");
                 }
                 /* else: not enough data yet, wait for next Process() call */
             }
