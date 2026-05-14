@@ -1865,9 +1865,9 @@
       <ActiveTab>0</ActiveTab>
       <Doc>
         <Name>..\MDK_Hardware\bsp_esp01s.c</Name>
-        <ColumnNumber>37</ColumnNumber>
+        <ColumnNumber>0</ColumnNumber>
         <TopLine>11</TopLine>
-        <CurrentLine>25</CurrentLine>
+        <CurrentLine>21</CurrentLine>
         <Folding>1</Folding>
         <ContractedFolders></ContractedFolders>
         <PaneID>0</PaneID>

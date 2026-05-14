@@ -284,12 +284,64 @@ static void ESP01S_ConfigSequence(void)
     delay_ms(1000);
     printf("[CFG] Step1: Done.\r\n");
 
-    printf("[CFG] Step2: AT check...\r\n");
+    /* Step 2: Check module alive - auto baud rate detection */
+    printf("[CFG] Step2: AT check (auto baud)...\r\n");
     ok = AT_WaitOK("AT", 2000);
     if (!ok) {
-        printf("[CFG] Step2: Retry...\r\n");
-        delay_ms(1000);
+        /* Try 9600 */
+        USART_InitTypeDef USART_InitStructure;
+        printf("[CFG] Step2: 115200 failed, trying 9600...\r\n");
+        USART_Cmd(ESP01S_USART, DISABLE);
+        USART_InitStructure.USART_BaudRate = 9600;
+        USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+        USART_InitStructure.USART_StopBits = USART_StopBits_1;
+        USART_InitStructure.USART_Parity = USART_Parity_No;
+        USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+        USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+        USART_Init(ESP01S_USART, &USART_InitStructure);
+        USART_Cmd(ESP01S_USART, ENABLE);
+        delay_ms(200);
+        RingBuf_Flush();
         ok = AT_WaitOK("AT", 2000);
+        if (ok) {
+            printf("[CFG] Step2: Works at 9600, setting to 115200...\r\n");
+            AT_WaitOK("AT+UART_DEF=115200,8,1,0,0", 2000);
+            USART_Cmd(ESP01S_USART, DISABLE);
+            USART_InitStructure.USART_BaudRate = 115200;
+            USART_Init(ESP01S_USART, &USART_InitStructure);
+            USART_Cmd(ESP01S_USART, ENABLE);
+            delay_ms(200);
+            RingBuf_Flush();
+            ok = AT_WaitOK("AT", 2000);
+        }
+    }
+    if (!ok) {
+        /* Try 74880 */
+        USART_InitTypeDef USART_InitStructure;
+        printf("[CFG] Step2: trying 74880...\r\n");
+        USART_Cmd(ESP01S_USART, DISABLE);
+        USART_InitStructure.USART_BaudRate = 74880;
+        USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+        USART_InitStructure.USART_StopBits = USART_StopBits_1;
+        USART_InitStructure.USART_Parity = USART_Parity_No;
+        USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+        USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+        USART_Init(ESP01S_USART, &USART_InitStructure);
+        USART_Cmd(ESP01S_USART, ENABLE);
+        delay_ms(200);
+        RingBuf_Flush();
+        ok = AT_WaitOK("AT", 2000);
+        if (ok) {
+            printf("[CFG] Step2: Works at 74880, setting to 115200...\r\n");
+            AT_WaitOK("AT+UART_DEF=115200,8,1,0,0", 2000);
+            USART_Cmd(ESP01S_USART, DISABLE);
+            USART_InitStructure.USART_BaudRate = 115200;
+            USART_Init(ESP01S_USART, &USART_InitStructure);
+            USART_Cmd(ESP01S_USART, ENABLE);
+            delay_ms(200);
+            RingBuf_Flush();
+            ok = AT_WaitOK("AT", 2000);
+        }
     }
     printf("[CFG] Step2: %s\r\n", ok ? "OK" : "FAIL");
 
