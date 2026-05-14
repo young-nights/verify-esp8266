@@ -8,6 +8,7 @@
  */
 
 #include "bsp_esp01s.h"
+#include <stdio.h>
 #include <string.h>
 
 /* ======================== Configuration ======================== */
