@@ -19,6 +19,12 @@
 #define ESP01S_TX_BUF_SIZE      128     /* AT+CIPSEND staging buffer */
 #define ESP01S_AT_TIMEOUT_MS    3000
 
+/* Hardware reset pins */
+#define ESP01S_RST_PORT         GPIOA
+#define ESP01S_RST_PIN          GPIO_Pin_4
+#define ESP01S_EN_PORT          GPIOA
+#define ESP01S_EN_PIN           GPIO_Pin_1
+
 /* Frame constants */
 #define FRAME_HEADER            0xAA
 #define FRAME_END               0x55
@@ -53,6 +59,18 @@ static void ESP01S_USART_Init(void)
     /* Enable clocks: GPIOA on APB2, USART2 on APB1 */
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+
+    /* PA4: ESP-01S RST - Output push-pull, default HIGH */
+    GPIO_InitStructure.GPIO_Pin   = ESP01S_RST_PIN;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(ESP01S_RST_PORT, &GPIO_InitStructure);
+    GPIO_SetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);  /* RST idle HIGH */
+
+    /* PA1: ESP-01S EN - Output push-pull, HIGH to enable */
+    GPIO_InitStructure.GPIO_Pin   = ESP01S_EN_PIN;
+    GPIO_Init(ESP01S_EN_PORT, &GPIO_InitStructure);
+    GPIO_SetBits(ESP01S_EN_PORT, ESP01S_EN_PIN);    /* EN HIGH = module ON */
 
     /* PA2: TX - Alternate function push-pull */
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_2;
@@ -257,9 +275,11 @@ static uint8_t AT_WaitOK(const char* cmd, uint16_t timeout)
 
 static void ESP01S_ConfigSequence(void)
 {
-    /* Step 1: Reset module to clean state */
-    ESP01S_SendCmd("AT+RST", "ready", 5000);
-    delay_ms(1000);
+    /* Step 1: Hardware reset - pull RST LOW then HIGH */
+    GPIO_ResetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);  /* Assert reset */
+    delay_ms(100);
+    GPIO_SetBits(ESP01S_RST_PORT, ESP01S_RST_PIN);    /* Release reset */
+    delay_ms(1000);  /* Wait for boot */
 
     /* Step 2: Check module alive */
     if (!AT_WaitOK("AT", 2000)) {
@@ -698,8 +718,6 @@ void ESP01S_Process(void)
 
 /* ======================== Public Init ======================== */
 
-#include "bsp_beep.h"
-
 void ESP01S_Init(void)
 {
     /* Initialize USART2 for ESP-01S communication */
@@ -711,10 +729,6 @@ void ESP01S_Init(void)
 
     /* Run AT command configuration sequence */
     ESP01S_ConfigSequence();
-
-    /* Success indication: 2 short beeps */
-    BEEP_SetCycleDuty(150, 80);
-    BEEP_Blink(2, 1, 1);
 }
 
 /* ======================== End of File ======================== */

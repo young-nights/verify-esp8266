@@ -9,6 +9,10 @@ int main(void)
 {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     delay_init(72);
+    LED_Init();
+
+    /* LED1 ON = system running */
+    LED1_On();
 
     ESP01S_Init();
 

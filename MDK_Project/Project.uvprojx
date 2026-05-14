@@ -551,9 +551,9 @@
               <FilePath>..\MDK_Hardware\bsp_esp01s.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_beep.c</FileName>
+              <FileName>bsp_led.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\MDK_Hardware\bsp_beep.c</FilePath>
+              <FilePath>..\MDK_Hardware\bsp_led.c</FilePath>
             </File>
           </Files>
         </Group>
