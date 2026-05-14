@@ -451,6 +451,80 @@ void ESP01S_FlushRingBuf(void)
     s_ringTail = s_ringHead;
 }
 
+/** Query ESP for actual connection status via AT+CIPSTATUS */
+void ESP01S_QueryStatus(void)
+{
+    uint16_t elapsed = 0;
+    uint16_t count, i;
+    uint16_t scanCount;
+    uint8_t scanBuf[256];
+
+    RingBuf_Flush();
+    USART_SendString("AT+CIPSTATUS\r\n");
+
+    /* Wait for OK */
+    while (elapsed < 2000) {
+        delay_ms(50);
+        elapsed += 50;
+        if (RingBuf_Contains("OK")) break;
+        if (RingBuf_Contains("ERROR")) break;
+    }
+
+    /* Read response */
+    if (s_ringHead >= s_ringTail)
+        count = s_ringHead - s_ringTail;
+    else
+        count = ESP01S_RINGBUF_SIZE - s_ringTail + s_ringHead;
+
+    scanCount = count < 256 ? count : 256;
+    for (i = 0; i < scanCount; i++) {
+        scanBuf[i] = s_ringBuf[(s_ringTail + i) % ESP01S_RINGBUF_SIZE];
+    }
+
+    /* Print raw response */
+    printf("[CIPSTATUS] Response (%d bytes): ", count);
+    for (i = 0; i < scanCount && i < 128; i++) {
+        printf("%c", (scanBuf[i] >= 0x20 && scanBuf[i] < 0x7F) ? scanBuf[i] : '.');
+    }
+    printf("\r\n");
+
+    /* Check for STATUS:3 (has active connections) */
+    for (i = 0; i + 9 <= scanCount; i++) {
+        if (memcmp(&scanBuf[i], "STATUS:3", 8) == 0) {
+            printf("[CIPSTATUS] STATUS:3 = has connections\r\n");
+            /* Look for +CIPSTATUS to get link_id */
+            {
+                uint16_t j;
+                for (j = 0; j + 12 <= scanCount; j++) {
+                    if (memcmp(&scanBuf[j], "+CIPSTATUS:", 11) == 0) {
+                        uint8_t lid = scanBuf[j + 11] - '0';
+                        if (lid <= 4) {
+                            if (!s_clientConnected) {
+                                s_clientLinkId = lid;
+                                s_clientConnected = 1;
+                                printf("[CIPSTATUS] Found client on link_id=%d\r\n", lid);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            RingBuf_Flush();
+            return;
+        }
+    }
+
+    /* Check other status values */
+    for (i = 0; i + 9 <= scanCount; i++) {
+        if (memcmp(&scanBuf[i], "STATUS:", 7) == 0) {
+            printf("[CIPSTATUS] STATUS=%c\r\n", scanBuf[i + 7]);
+            break;
+        }
+    }
+
+    RingBuf_Flush();
+}
+
 /* ======================== Frame RX Parsing ======================== */
 
 /**

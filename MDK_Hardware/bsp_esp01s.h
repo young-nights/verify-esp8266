@@ -10,5 +10,6 @@ void ESP01S_SendTestData(void);  /* Send a test frame with dummy data to verify 
 uint8_t ESP01S_IsClientConnected(void);  /* Check if a TCP client is connected */
 void ESP01S_DumpRingBuf(void);  /* Debug: print ring buffer raw hex */
 void ESP01S_FlushRingBuf(void);  /* Force flush ring buffer */
+void ESP01S_QueryStatus(void);   /* Query ESP for connection status via AT+CIPSTATUS */
 
 #endif /* __BSP_ESP01S_H */
