@@ -70,15 +70,22 @@ int main(void)
                 printf("[STATE] Client changed to: %d\r\n", prevClientState);
             }
 
-            /* Status + ring buffer dump + CIPSTATUS every 5s */
+            /* Status + CIPSTATUS every 5s, server health check every 10s */
             if ((TimeCnt_ms - lastStatusTick) >= 5000) {
+                static uint8_t healthCheckCount = 0;
                 lastStatusTick = TimeCnt_ms;
                 printf("[STATUS] WiFi=%d Client=%d\r\n",
                     ESP01S_WiFiConnected, ESP01S_IsClientConnected());
-                ESP01S_DumpRingBuf();
 
                 /* Query ESP for actual connection status */
                 ESP01S_QueryStatus();
+
+                /* Server health check every 10s (every other cycle) */
+                healthCheckCount++;
+                if (healthCheckCount >= 2) {
+                    healthCheckCount = 0;
+                    ESP01S_EnsureServer();
+                }
             }
 
             /* Auto-send every 3s regardless of client state (for testing) */

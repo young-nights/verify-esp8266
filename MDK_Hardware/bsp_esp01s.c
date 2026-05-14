@@ -525,6 +525,66 @@ void ESP01S_QueryStatus(void)
     RingBuf_Flush();
 }
 
+/** Ensure TCP server is running. Re-send AT+CIPSERVER if needed. */
+void ESP01S_EnsureServer(void)
+{
+    uint16_t elapsed = 0;
+    uint16_t count, i;
+    uint16_t scanCount;
+    uint8_t scanBuf[128];
+    uint8_t hasServer = 0;
+
+    RingBuf_Flush();
+    USART_SendString("AT+CIPSTATUS\r\n");
+
+    /* Wait for OK */
+    while (elapsed < 2000) {
+        delay_ms(50);
+        elapsed += 50;
+        if (RingBuf_Contains("OK")) break;
+    }
+
+    /* Read response */
+    if (s_ringHead >= s_ringTail)
+        count = s_ringHead - s_ringTail;
+    else
+        count = ESP01S_RINGBUF_SIZE - s_ringTail + s_ringHead;
+
+    scanCount = count < 128 ? count : 128;
+    for (i = 0; i < scanCount; i++) {
+        scanBuf[i] = s_ringBuf[(s_ringTail + i) % ESP01S_RINGBUF_SIZE];
+    }
+
+    /* Look for +CIPSTATUS which indicates server is active */
+    for (i = 0; i + 11 <= scanCount; i++) {
+        if (memcmp(&scanBuf[i], "+CIPSTATUS:", 11) == 0) {
+            hasServer = 1;
+            break;
+        }
+    }
+
+    /* Also check for STATUS:2 or STATUS:3 (server listening) */
+    for (i = 0; i + 8 <= scanCount; i++) {
+        if (memcmp(&scanBuf[i], "STATUS:2", 8) == 0 ||
+            memcmp(&scanBuf[i], "STATUS:3", 8) == 0) {
+            hasServer = 1;
+            break;
+        }
+    }
+
+    RingBuf_Flush();
+
+    if (!hasServer) {
+        printf("[SERVER] TCP server not detected, restarting...\r\n");
+        AT_WaitOK("AT+CIPMUX=1", 2000);
+        AT_WaitOK("AT+CIPSERVER=1,8080", 2000);
+        AT_WaitOK("AT+CIPSTO=120", 2000);
+        printf("[SERVER] TCP server restarted.\r\n");
+    } else {
+        printf("[SERVER] TCP server OK.\r\n");
+    }
+}
+
 /* ======================== Frame RX Parsing ======================== */
 
 /**
