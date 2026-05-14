@@ -482,7 +482,6 @@ static int16_t RingBuf_ParseNumber(uint16_t startIdx, uint16_t* outEndIdx, uint1
 void ESP01S_Process(void)
 {
     uint16_t count, i;
-    uint8_t tmpBuf[256];
 
     /* Calculate available bytes */
     if (s_ringHead >= s_ringTail)
