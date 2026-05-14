@@ -50,7 +50,10 @@ int main(void)
 
     printf("[INIT] Starting ESP-01S init...\r\n");
     ESP01S_Init();
-    printf("[INIT] ESP-01S init done.\r\n");
+    /* Flush leftover AT command responses from init */
+    ESP01S_DumpRingBuf();
+    ESP01S_FlushRingBuf();
+    printf("[INIT] RingBuf flushed.\r\n");
 
     while (1)
     {

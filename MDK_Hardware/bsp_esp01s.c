@@ -436,6 +436,11 @@ void ESP01S_DumpRingBuf(void)
     printf("\r\n");
 }
 
+void ESP01S_FlushRingBuf(void)
+{
+    s_ringTail = s_ringHead;
+}
+
 /* ======================== Frame RX Parsing ======================== */
 
 /**
