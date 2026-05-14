@@ -100,3 +100,13 @@ MDK_Project/Project.uvguix.18452
 MDK_Project/Project.uvoptx
 MDK_Project/Project.uvprojx
 MDK_Project/startup_stm32f10x_hd.lst
+MDK_Project/Objects/bsp_esp01s.crf
+MDK_Project/Objects/main.crf
+MDK_Project/Objects/Project.build_log.htm
+MDK_Project/Objects/Project.htm
+MDK_Project/Objects/Project_Projet.dep
+MDK_Project/Objects/stm32f10x_it.crf
+MDK_Project/Objects/sys.crf
+MDK_Project/Objects/systick_delay.crf
+MDK_Project/Project.uvguix.Administrator
+MDK_Project/Project.uvoptx
