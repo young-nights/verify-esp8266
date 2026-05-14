@@ -11,14 +11,12 @@ static void TIM2_Init(void)
     TIM_TimeBaseInitTypeDef TIM_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    /* NVIC config */
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    /* TIM2: 72MHz / 71+1 = 1MHz, period 1000-1 = 1ms */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
     TIM_InitStructure.TIM_Period = 1000 - 1;
     TIM_InitStructure.TIM_Prescaler = 71;
@@ -50,22 +48,29 @@ int main(void)
 
     printf("[INIT] Starting ESP-01S init...\r\n");
     ESP01S_Init();
+
     /* Flush leftover AT command responses from init */
     ESP01S_DumpRingBuf();
     ESP01S_FlushRingBuf();
-    printf("[INIT] RingBuf flushed.\r\n");
+    printf("[INIT] RingBuf flushed. Ready.\r\n");
 
     while (1)
     {
         ESP01S_Process();
 
-        /* Send test data every 5 seconds when client connected */
         {
-            static uint32_t lastTick = 0;
             static uint32_t lastStatusTick = 0;
+            static uint32_t lastAutoSendTick = 0;
+            static uint8_t prevClientState = 0;
             extern volatile uint32_t TimeCnt_ms;
 
-            /* Periodic status report every 5s */
+            /* Detect client state change */
+            if (ESP01S_IsClientConnected() != prevClientState) {
+                prevClientState = ESP01S_IsClientConnected();
+                printf("[STATE] Client changed to: %d\r\n", prevClientState);
+            }
+
+            /* Status + ring buffer dump every 5s */
             if ((TimeCnt_ms - lastStatusTick) >= 5000) {
                 lastStatusTick = TimeCnt_ms;
                 printf("[STATUS] WiFi=%d Client=%d\r\n",
@@ -73,11 +78,15 @@ int main(void)
                 ESP01S_DumpRingBuf();
             }
 
-            if ((TimeCnt_ms - lastTick) >= 5000) {
-                lastTick = TimeCnt_ms;
+            /* Auto-send every 3s regardless of client state (for testing) */
+            if ((TimeCnt_ms - lastAutoSendTick) >= 3000) {
+                lastAutoSendTick = TimeCnt_ms;
                 if (ESP01S_IsClientConnected()) {
-                    printf("[TX] Sending test data...\r\n");
+                    printf("[TX] Client connected, sending test data...\r\n");
                     ESP01S_SendTestData();
+                    printf("[TX] Send attempt done.\r\n");
+                } else {
+                    printf("[TX] No client, skip send.\r\n");
                 }
             }
         }

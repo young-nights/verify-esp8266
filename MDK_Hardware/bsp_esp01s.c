@@ -342,7 +342,10 @@ static void ESP01S_SendFrame(uint8_t link_id, uint8_t cmd, const uint8_t* data, 
     uint16_t frameLen;
     char cipSendCmd[32];
 
-    if (!s_clientConnected) return;
+    if (!s_clientConnected) {
+        printf("[SEND] No client connected, skip.\r\n");
+        return;
+    }
 
     /* Build frame: HEADER | CMD | LEN | PAYLOAD | CHECKSUM | END */
     frameLen = (uint16_t)len + FRAME_OVERHEAD;
@@ -361,11 +364,16 @@ static void ESP01S_SendFrame(uint8_t link_id, uint8_t cmd, const uint8_t* data, 
 
     /* AT+CIPSEND=<link_id>,<length> */
     sprintf(cipSendCmd, "AT+CIPSEND=%d,%d", link_id, (int)frameLen);
+    printf("[SEND] CMD: %s\r\n", cipSendCmd);
     if (!ESP01S_SendCmd(cipSendCmd, ">", 2000)) {
-        /* Retry once after brief delay */
+        printf("[SEND] First attempt failed, retry...\r\n");
         delay_ms(100);
-        if (!ESP01S_SendCmd(cipSendCmd, ">", 2000)) return;
+        if (!ESP01S_SendCmd(cipSendCmd, ">", 2000)) {
+            printf("[SEND] FAILED - no > prompt\r\n");
+            return;
+        }
     }
+    printf("[SEND] Got > prompt, sending frame...\r\n");
 
     /* Send raw frame data */
     USART_SendBytes(frame, frameLen);
@@ -377,10 +385,12 @@ static void ESP01S_SendFrame(uint8_t link_id, uint8_t cmd, const uint8_t* data, 
             delay_ms(10);
             elapsed += 10;
             if (RingBuf_Contains("SEND OK")) {
+                printf("[SEND] SEND OK confirmed\r\n");
                 RingBuf_Flush();
                 return;
             }
         }
+        printf("[SEND] Timeout waiting for SEND OK\r\n");
         RingBuf_Flush();
     }
 }
