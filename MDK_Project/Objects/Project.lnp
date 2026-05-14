@@ -28,6 +28,7 @@
 ".\objects\stm32f10x_it.o"
 ".\objects\system_stm32f10x.o"
 ".\objects\bsp_esp01s.o"
+".\objects\bsp_led.o"
 ".\objects\sys.o"
 ".\objects\systick_delay.o"
 --strict --scatter ".\Objects\Project.sct"

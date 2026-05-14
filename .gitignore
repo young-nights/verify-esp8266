@@ -53,3 +53,12 @@ dkms.conf
 
 # debug information files
 *.dwo
+MDK_Project/Objects/bsp_led.crf
+MDK_Project/Objects/bsp_led.crf
+MDK_Project/Objects/Project.axf
+MDK_Project/Objects/Project.build_log.htm
+MDK_Project/Objects/Project.htm
+MDK_Project/Objects/Project.lnp
+MDK_Project/Objects/Project_Projet.dep
+MDK_Project/Project.uvguix.Administrator
+MDK_Project/Project.uvoptx
