@@ -27,24 +27,13 @@ Project File Date:  05/14/2026
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Projet'
-compiling bsp_adc.c...
-"no source": Error:  #5: cannot open source input file "..\MDK_System\bsp_adc.c": No such file or directory
-..\MDK_System\bsp_adc.c: 0 warnings, 1 error
-compiling bsp_esp01s.c...
-..\MDK_Hardware\bsp_esp01s.c(647): warning:  #177-D: variable "tmpBuf"  was declared but never referenced
-      uint8_t tmpBuf[256];
-..\MDK_Hardware\bsp_esp01s.c(864): error:  #5: cannot open source input file "bsp_beep.h": No such file or directory
-  #include "bsp_beep.h"
-..\MDK_Hardware\bsp_esp01s.c: 1 warning, 1 error
-compiling TimingSet.c...
-..\MDK_APP\TimingSet.c(39): warning:  #223-D: function "BEEP_Blink" declared implicitly
-  				BEEP_Blink(3, 0, 2);  /* Beep 3 times to warn */
-..\MDK_APP\TimingSet.c(233): warning:  #223-D: function "BEEP_Blink" declared implicitly
-  			BEEP_Blink(1, 2, 100);
-..\MDK_APP\TimingSet.c(11): warning:  #177-D: variable "_lastPage"  was declared but never referenced
-  static uint8_t _lastPage = 0xFF;
-..\MDK_APP\TimingSet.c: 3 warnings, 0 errors
-".\Objects\Project.axf" - 2 Error(s), 4 Warning(s).
+linking...
+.\Objects\Project.axf: Error: L6218E: Undefined symbol BEEP_Blink (referred from bsp_esp01s.o).
+.\Objects\Project.axf: Error: L6218E: Undefined symbol BEEP_SetCycleDuty (referred from bsp_esp01s.o).
+Not enough information to list image symbols.
+Not enough information to list load addresses in the image map.
+Finished: 2 information, 0 warning and 2 error messages.
+".\Objects\Project.axf" - 2 Error(s), 0 Warning(s).
 
 <h2>Software Packages used:</h2>
 

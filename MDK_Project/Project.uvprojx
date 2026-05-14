@@ -546,30 +546,20 @@
           <GroupName>MDK_Hardware</GroupName>
           <Files>
             <File>
-              <FileName>bsp_led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_Hardware\bsp_led.c</FilePath>
-            </File>
-            <File>
               <FileName>bsp_esp01s.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\MDK_Hardware\bsp_esp01s.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_beep.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MDK_Hardware\bsp_beep.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
           <GroupName>MDK_System</GroupName>
           <Files>
-            <File>
-              <FileName>bsp_adc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_System\bsp_adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>iwdg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_System\iwdg.c</FilePath>
-            </File>
             <File>
               <FileName>sys.c</FileName>
               <FileType>1</FileType>
@@ -580,32 +570,10 @@
               <FileType>1</FileType>
               <FilePath>..\MDK_System\systick_delay.c</FilePath>
             </File>
-            <File>
-              <FileName>usart_use1.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_System\usart_use1.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>MDK_APP</GroupName>
-          <Files>
-            <File>
-              <FileName>GeneralTIM.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_APP\GeneralTIM.c</FilePath>
-            </File>
-            <File>
-              <FileName>MyTypedef.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_APP\MyTypedef.c</FilePath>
-            </File>
-            <File>
-              <FileName>TimingSet.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\MDK_APP\TimingSet.c</FilePath>
-            </File>
-          </Files>
         </Group>
         <Group>
           <GroupName>MDK_Doc</GroupName>
