@@ -8,7 +8,6 @@
  */
 
 #include "bsp_esp01s.h"
-#include "MyTypedef.h"
 #include <string.h>
 
 /* ======================== Configuration ======================== */
@@ -25,18 +24,10 @@
 #define FRAME_OVERHEAD          5       /* HEAD+CMD+LEN+SUM+END */
 
 /* TX commands (MCU -> APP) */
-#define CMD_SENSOR_DATA         0x01
-#define CMD_DEVICE_STATUS       0x02
-#define CMD_ALARM_EVENT         0x03
+#define CMD_TEST_DATA           0x01    /* Test data frame */
 
 /* RX commands (APP -> MCU) */
-#define CMD_QUERY_STATUS        0x10
-#define CMD_SWITCH_MODE         0x11
-#define CMD_CONTROL_RELAY       0x12
-#define CMD_SYNC_THRESHOLDS     0x13
-#define CMD_TRIGGER_FEED        0x14
-#define CMD_SET_ALARM           0x15
-#define CMD_SET_FEED_INTERVAL   0x16
+#define CMD_ECHO_REQUEST        0x10    /* APP sends echo, MCU responds */
 
 /* ======================== Ring Buffer ======================== */
 static volatile uint8_t  s_ringBuf[ESP01S_RINGBUF_SIZE];
@@ -278,8 +269,8 @@ static void ESP01S_ConfigSequence(void)
     /* Step 3: Set AP mode */
     AT_WaitOK("AT+CWMODE=2", 2000);
 
-    /* Step 4: Create AP: SSID=FishTank, password=12345678, ch=1, enc=WPA2 */
-    AT_WaitOK("AT+CWSAP=\"FishTank\",\"12345678\",1,3", 3000);
+    /* Step 4: Create AP: SSID=ESP8266, password=12345678, ch=1, enc=WPA2 */
+    AT_WaitOK("AT+CWSAP=\"ESP8266\",\"12345678\",1,3", 3000);
     delay_ms(1000);
 
     /* Step 5: Enable multiple connections */
@@ -362,98 +353,17 @@ static void ESP01S_SendFrame(uint8_t link_id, uint8_t cmd, const uint8_t* data, 
 
 /* ======================== Public TX Functions ======================== */
 
-void ESP01S_SendSensorData(void)
+/**
+ * @brief  Send a test frame with 4 bytes of dummy data to verify connectivity.
+ */
+void ESP01S_SendTestData(void)
 {
-    uint8_t payload[14];
-    float f;
-
+    uint8_t payload[4] = {0x01, 0x02, 0x03, 0x04};
     if (!s_clientConnected) return;
-
-    /* waterTemp: float little-endian */
-    f = Record.waterTemp;
-    memcpy(&payload[0], &f, 4);
-
-    /* phValue: float little-endian */
-    f = Record.phValue;
-    memcpy(&payload[4], &f, 4);
-
-    /* waterLevel: uint8 */
-    payload[8] = Record.waterLevel;
-
-    /* airQuality: uint16 big-endian */
-    payload[9]  = (uint8_t)(Record.airQuality >> 8);
-    payload[10] = (uint8_t)(Record.airQuality & 0xFF);
-
-    /* runMode: uint8 */
-    payload[11] = Record.runMode;
-
-    /* feedCountdown: uint16 big-endian */
-    {
-        uint16_t fc = (uint16_t)Record.feedCountdown;
-        payload[12] = (uint8_t)(fc >> 8);
-        payload[13] = (uint8_t)(fc & 0xFF);
-    }
-
-    ESP01S_SendFrame(s_clientLinkId, CMD_SENSOR_DATA, payload, 14);
-}
-
-void ESP01S_SendDeviceStatus(void)
-{
-    uint8_t payload[5];
-
-    if (!s_clientConnected) return;
-
-    /* relayState: bit0=heat, bit1=fill, bit2=drain, bit3=oxygen */
-    payload[0] = 0;
-    if (Flag.relayHeat)  payload[0] |= 0x01;
-    if (Flag.relayFill)  payload[0] |= 0x02;
-    if (Flag.relayDrain) payload[0] |= 0x04;
-    if (Flag.relayOxygen)payload[0] |= 0x08;
-
-    /* alarmEnable */
-    payload[1] = Flag.alarmEnable;
-
-    /* feeding */
-    payload[2] = Flag.feeding;
-
-    /* reserved */
-    payload[3] = 0;
-    payload[4] = 0;
-
-    ESP01S_SendFrame(s_clientLinkId, CMD_DEVICE_STATUS, payload, 5);
-}
-
-void ESP01S_SendAlarm(uint8_t type, uint8_t status)
-{
-    uint8_t payload[2];
-
-    if (!s_clientConnected) return;
-
-    payload[0] = type;
-    payload[1] = status;
-
-    ESP01S_SendFrame(s_clientLinkId, CMD_ALARM_EVENT, payload, 2);
+    ESP01S_SendFrame(s_clientLinkId, CMD_TEST_DATA, payload, 4);
 }
 
 /* ======================== Frame RX Parsing ======================== */
-
-/**
- * @brief  Parse a float in little-endian from a byte array.
- */
-static float ParseFloatLE(const uint8_t* buf)
-{
-    float val;
-    memcpy(&val, buf, 4);
-    return val;
-}
-
-/**
- * @brief  Parse a uint16 in big-endian from a byte array.
- */
-static uint16_t ParseU16BE(const uint8_t* buf)
-{
-    return ((uint16_t)buf[0] << 8) | buf[1];
-}
 
 /**
  * @brief  Handle a received protocol frame.
@@ -466,83 +376,10 @@ static void ESP01S_HandleFrame(const uint8_t* frame)
     const uint8_t* payload = &frame[3];
 
     switch (cmd) {
-    case CMD_QUERY_STATUS:
-        /* APP requests current status - send both sensor data and device status */
-        ESP01S_SendSensorData();
-        ESP01S_SendDeviceStatus();
+    case CMD_ECHO_REQUEST:
+        /* Echo back the received payload */
+        ESP01S_SendFrame(s_clientLinkId, CMD_ECHO_REQUEST, payload, len);
         break;
-
-    case CMD_SWITCH_MODE:
-        /* LEN=1: 0=auto, 1=manual */
-        if (len >= 1) {
-            Record.runMode = payload[0] ? 1 : 0;
-            Flag.manualTimeout = 60;
-            ESP01S_SendDeviceStatus();
-        }
-        break;
-
-    case CMD_CONTROL_RELAY:
-        /* LEN=2: relayId + state */
-        if (len >= 2) {
-            uint8_t relayId = payload[0];
-            uint8_t state   = payload[1] ? 1 : 0;
-            switch (relayId) {
-            case 0: Flag.relayHeat   = state; break;
-            case 1: Flag.relayFill   = state; break;
-            case 2: Flag.relayDrain  = state; break;
-            case 3: Flag.relayOxygen = state; break;
-            default: break;
-            }
-            /* Safety: fill/drain mutual exclusion */
-            if (Flag.relayFill && Flag.relayDrain) {
-                Flag.relayDrain = 0;
-            }
-            /* Reset manual timeout on relay change */
-            Flag.manualTimeout = 60;
-            /* Notify APP of new status */
-            ESP01S_SendDeviceStatus();
-        }
-        break;
-
-    case CMD_SYNC_THRESHOLDS:
-        /* LEN=20: tempLower(4) + tempUpper(4) + airQualityMax(2) +
-         *         phLower(4) + phUpper(4) + waterLevelMin(1) + waterLevelMax(1) */
-        if (len >= 20) {
-            Record.tempLower     = ParseFloatLE(&payload[0]);
-            Record.tempUpper     = ParseFloatLE(&payload[4]);
-            Record.airQualityMax = ParseU16BE(&payload[8]);
-            Record.phLower       = ParseFloatLE(&payload[10]);
-            Record.phUpper       = ParseFloatLE(&payload[14]);
-            Record.waterLevelMin = payload[18];
-            Record.waterLevelMax = payload[19];
-            ESP01S_SendDeviceStatus();
-        }
-        break;
-
-    case CMD_TRIGGER_FEED:
-        /* LEN=0: trigger manual feed */
-        if (Flag.feeding == 0) {
-            Flag.feeding = 1;
-            Record.feedCountdown = 3;  /* 3-second feed cycle */
-        }
-        break;
-
-    case CMD_SET_ALARM:
-        /* LEN=1: enabled(0/1) */
-        if (len >= 1) {
-            Flag.alarmEnable = payload[0] ? 1 : 0;
-            ESP01S_SendDeviceStatus();
-        }
-        break;
-
-    case CMD_SET_FEED_INTERVAL:
-        /* LEN=2: seconds(uint16 BE) */
-        if (len >= 2) {
-            Record.feedInterval = ParseU16BE(&payload[0]);
-            ESP01S_SendDeviceStatus();
-        }
-        break;
-
     default:
         break;
     }
