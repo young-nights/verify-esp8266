@@ -13,7 +13,7 @@
 
 /* ======================== Configuration ======================== */
 #define ESP01S_USART            USART2
-#define ESP01S_BAUDRATE         9600
+#define ESP01S_BAUDRATE         115200
 #define ESP01S_RINGBUF_SIZE     512
 #define ESP01S_MAX_LINKS        5       /* CIPMUX=1 supports up to 5 links */
 #define ESP01S_TX_BUF_SIZE      128     /* AT+CIPSEND staging buffer */
