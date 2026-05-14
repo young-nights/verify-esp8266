@@ -27,10 +27,18 @@ Project File Date:  05/14/2026
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Projet'
+compiling systick_delay.c...
+compiling main.c...
+compiling stm32f10x_it.c...
 compiling bsp_esp01s.c...
+compiling sys.c...
 linking...
-Program Size: Code=5024 RO-data=336 RW-data=52 ZI-data=2148  
-".\Objects\Project.axf" - 0 Error(s), 0 Warning(s).
+.\Objects\Project.axf: Error: L6218E: Undefined symbol LED1_On (referred from main.o).
+.\Objects\Project.axf: Error: L6218E: Undefined symbol LED_Init (referred from main.o).
+Not enough information to list image symbols.
+Not enough information to list load addresses in the image map.
+Finished: 2 information, 0 warning and 2 error messages.
+".\Objects\Project.axf" - 2 Error(s), 0 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -43,7 +51,8 @@ Package Vendor: Keil
   D:/Keil_v5/ARM/PACK/Keil/STM32F1xx_DFP/2.4.1/Device/Include
 
 <h2>Collection of Component Files used:</h2>
-Build Time Elapsed:  00:00:01
+Target not created.
+Build Time Elapsed:  00:00:00
 </pre>
 </body>
 </html>
