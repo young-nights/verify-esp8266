@@ -35,6 +35,7 @@
 
 /* RX commands (APP -> MCU) */
 #define CMD_ECHO_REQUEST        0x10    /* APP sends echo, MCU responds */
+#define CMD_LED_CONTROL         0x20    /* APP controls LED: payload=[led_id, state] */
 
 /* ======================== Ring Buffer ======================== */
 static volatile uint8_t  s_ringBuf[ESP01S_RINGBUF_SIZE];
@@ -653,6 +654,20 @@ static void ESP01S_HandleFrame(const uint8_t* frame)
     case CMD_ECHO_REQUEST:
         /* Echo back the received payload */
         ESP01S_SendFrame(s_clientLinkId, CMD_ECHO_REQUEST, payload, len);
+        break;
+    case CMD_LED_CONTROL:
+        /* LEN=2: led_id(0=LED1,1=LED2) + state(0=OFF,1=ON) */
+        if (len >= 2) {
+            uint8_t ledId = payload[0];
+            uint8_t state = payload[1];
+            if (ledId == 0) {
+                if (state) LED1_On(); else LED1_Off();
+                printf("[LED] LED1 %s\r\n", state ? "ON" : "OFF");
+            } else if (ledId == 1) {
+                if (state) LED2_On(); else LED2_Off();
+                printf("[LED] LED2 %s\r\n", state ? "ON" : "OFF");
+            }
+        }
         break;
     default:
         printf("[RX] Unknown CMD=0x%02X LEN=%d\r\n", cmd, len);
